@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What needs doing?</title>
+    <style>
+        body { background-color: rgb(107,114,128); font-family: system-ui,sans-serif; color: white; }
+        main { display: flex; justify-content: center; }
+        main>div { width: 20rem; background-color: rgb(31,41,55); padding: 1.5rem; margin-top: 1.25rem; border: 1px solid rgb(31,41,55); border-radius: .5rem; }
+        h1 { margin: 0; margin-bottom: 1.75rem; font-size: 1.5rem; line-height: 2rem; font-weight: 700; width: 100%; text-align: center; }
+        ul { list-style: none; margin: 0; padding: 0; color: rgb(243, 244, 246); }
+        li { padding-top: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(229,231,235,0.2); }
+        ul li:last-child { border-bottom: 0; }
+        form, input { margin: 0; padding: 0; }
+        li form>div { display: flex; justify-content: space-between; align-items: center; }
+        button { padding: .5rem; border-radius: 99rem; font-size: 1.0rem; color: rgb(191, 219, 254); background-color: initial; border: 1px solid rgba(55, 65, 81, 0); cursor: pointer; }
+        button:hover { background-color: rgb(55, 65, 81); border: 1px solid rgb(55, 65, 81); }
+        span { margin-left: .5rem; }
+        span.done { color: rgb(156,163,175); text-decoration: line-through; }
+        input { padding: .6rem; font-size: .875rem; line-height: 1.25rem; background-color: rgb(55, 65, 81); border: 1px solid rgb(75,85,99); border-radius: .5rem; width: calc(100% - 1.2rem); margin-bottom: .75rem; color: white; }
+        input::placeholder { color: rgb(156,163,175); }
+        input:focus { outline: none; border: 1px solid white; }
+    </style>
+</head>
+<body>
+    <main>
+        <div>
+            <h1>What needs doing?</h1>
+            <form method="post" autocomplete="off">
+                <input name="task" type="text" tabindex="0" autofocus placeholder="Add a todo..."/> 
+            </form>
+            <ul>
+                {{range .todos}}
+                <li>
+                    <form action="toggle" method="post">
+                        <div>
+                            <span {{if .done}}class="done"{{end}}>
+                                {{.task}}
+                            </span>
+                            <div>
+                                <input type="hidden" name="id" value="{{.id}}"/>
+                                <button type="submit">
+                                    {{if .done}}
+                                        Undo
+                                    {{else}}
+                                        Done
+                                    {{end}}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </li>      
+                {{end}}
+            </ul>
+        </div>
+    </main>
+</body>
+</html>
