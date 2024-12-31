@@ -131,7 +131,7 @@ func Connect(addr [4]byte, port int) (int, error) {
 }
 
 func Println(s string) {
-	syscall.Write(1, []byte(s+"\n"))
+	Write(1, []byte(s+"\n"))
 }
 
 type Reader interface {
@@ -179,13 +179,19 @@ func Read(fd int, buf []byte) (int, error) {
 }
 
 func Write(fd int, buf []byte) (int, error) {
-	for {
-		n, err := syscall.Write(fd, buf)
-		if err == syscall.EINTR {
-			continue
+	size := len(buf)
+	pos := 0
+	for pos < size {
+		n, err := syscall.Write(fd, buf[pos:])
+		if err != nil {
+			if err == syscall.EINTR {
+				continue
+			}
+			return -1, err
 		}
-		return n, err
+		pos += n
 	}
+	return pos, nil
 }
 
 type fileReader struct {
@@ -266,9 +272,14 @@ func (lr *LineReader) ReadLine() (string, error) {
 	}
 }
 
-func (lr *LineReader) GetTail() []byte {
-	tail := lr.buf[0:lr.len]
-	lr.len = 0
+func (lr *LineReader) GetTail(size int) []byte {
+	if size > lr.len {
+		size = lr.len
+	}
+	tail := make([]byte, size)
+	copy(tail, lr.buf[0:size])
+	lr.pos += size
+	lr.compact()
 	return tail
 }
 
@@ -285,7 +296,9 @@ func (lr *LineReader) read() error {
 }
 
 func (reader *LineReader) compact() {
-	copy(reader.buf, reader.buf[reader.pos:reader.len])
-	reader.len -= reader.pos
-	reader.pos = 0
+	if reader.pos > 0 {
+		copy(reader.buf, reader.buf[reader.pos:reader.len])
+		reader.len -= reader.pos
+		reader.pos = 0
+	}
 }

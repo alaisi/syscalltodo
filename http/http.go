@@ -18,7 +18,7 @@ const ErrServerClosed = protocolError("Server closed")
 func (srv *Server) Close() {
 	if srv.closefd > 0 {
 		close := []byte{0, 0, 0, 0, 0, 0, 0, 1}
-		syscall.Write(srv.closefd, close)
+		io.Write(srv.closefd, close)
 	}
 }
 
@@ -78,7 +78,8 @@ func (srv *Server) serve(connfd int) {
 		}
 		keepAlive := setKeepAlive(res, req)
 		sendResponse(res, writer)
-		if !keepAlive {
+		_, err = readBody(req)
+		if !keepAlive || err != nil {
 			break
 		}
 	}
@@ -116,7 +117,10 @@ func readRequest(lr *io.LineReader, raw io.Reader) (*Request, error) {
 			return nil, err
 		}
 		if line == "" {
-			body = lr.GetTail()
+			contentLen := headers["content-length"]
+			if len(contentLen) == 1 {
+				body = lr.GetTail(str.Atoi(contentLen[0]))
+			}
 			break
 		}
 		header, value, err := parseHeader(line)
@@ -308,6 +312,9 @@ func readBody(req *Request) ([]byte, error) {
 	if size < 1 || size > 8192 {
 		return []byte{}, nil
 	}
+	if len(req.body) == size {
+		return req.body, nil
+	}
 	buf := make([]byte, size)
 	copy(buf, req.body)
 	for read := len(req.body); read < size; {
@@ -332,12 +339,14 @@ func (req *Request) ParseForm() error {
 	req.Form = make(UrlValues, 8)
 	for _, field := range str.Split(string(body), '&') {
 		eq := str.IndexOf(field, '=')
-		k := urlDecode(field[0:eq])
-		v := ""
-		if eq < len(field)-1 {
-			v = urlDecode(field[eq+1:])
+		if eq > 0 {
+			k := urlDecode(field[0:eq])
+			v := ""
+			if eq < len(field)-1 {
+				v = urlDecode(field[eq+1:])
+			}
+			req.Form[k] = append(req.Form[k], v)
 		}
-		req.Form[k] = append(req.Form[k], v)
 	}
 	return nil
 }

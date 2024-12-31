@@ -88,7 +88,7 @@ func parseValueExpr(valueKey string) ([]Template, error) {
 
 func parseIfExpr(conditionKey string, lexer *lexer) ([]Template, error) {
 	ifBody := make([]Template, 0, 1)
-	elseBody := make([]Template, 0)
+	var elseBody []Template
 	for {
 		next, eof := lexer.pop()
 		if eof {

@@ -3,6 +3,7 @@ package slog
 import (
 	"syscall"
 
+	"github.com/alaisi/syscalltodo/io"
 	"github.com/alaisi/syscalltodo/str"
 )
 
@@ -34,7 +35,7 @@ func log(level level, msg string) {
 	line := str.Ltoa(currentTimeMillis()) + " " +
 		levelNames[level] + " " +
 		msg + "\n"
-	syscall.Write(2, []byte(line))
+	io.Write(2, []byte(line))
 }
 
 func currentTimeMillis() int64 {
