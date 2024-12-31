@@ -43,14 +43,12 @@ func (db *DB) SetMaxOpenConns(max int) {
 
 func (db *DB) Close() error {
 	for {
-		locked := <-db.sizeLock
-		size := db.size
-		db.sizeLock <- locked
-		if size == 0 {
+		select {
+		case conn := <-db.pool:
+			db.destroyConnection(conn)
+		default:
 			return nil
 		}
-		conn := <-db.pool
-		db.destroyConnection(conn)
 	}
 }
 
